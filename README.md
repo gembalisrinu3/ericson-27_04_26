@@ -55,3 +55,39 @@
        Get-ChildItem -Path "C:\Program Files" -Recurse -Filter gh.exe -ErrorAction SilentlyContinue
        Get-ChildItem -Path "$env:LOCALAPPDATA\Programs" -Recurse -Filter gh.exe -ErrorAction SilentlyContinue
        $env:Path += ";C:\Program Files\GitHub CLI"
+
+10. # Inspect what bootstrap actually created on disk
+          cd $HOME 
+          gh repo clone 7ganeshs/ericson-infra 
+          cd ericson-infra 
+          ls clusters/lab/flux-system/
+          
+          # On disk (where you ran the command):
+          ls ericson-infra/clusters/lab/flux-system/
+
+11. # deploy GitOps workload — podinfo. Create a GitRepository pointing at the upstream podinfo repo
+
+          cd ericson-infra
+          flux create source git podinfo \
+            --url=https://github.com/stefanprodan/podinfo \
+            --branch=master \
+            --interval=1m \
+            --export > ./clusters/lab/podinfo-source.yaml
+           
+          cat ./clusters/lab/podinfo-source.yaml
+
+12. # Create a Kustomization pointing at podinfo's deploy/kustomize directory
+
+         flux create kustomization podinfo \
+            --target-namespace=default \
+            --source=podinfo \
+            --path="./kustomize" \
+            --prune=true \
+            --interval=5m \
+            --health-check-timeout=2m \
+            --export > ./clusters/lab/podinfo-kustomization.yaml
+           
+          cat ./clusters/lab/podinfo-kustomization.yaml
+
+
+
