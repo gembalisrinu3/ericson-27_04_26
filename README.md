@@ -47,7 +47,8 @@
        --branch=main \
        --path=clusters/lab \
        --personal \
-       --private
+       --private \
+       --token-auth
 
 
 
