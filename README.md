@@ -89,5 +89,50 @@
            
           cat ./clusters/lab/podinfo-kustomization.yaml
 
+13. # Commit and push. The git push IS the deployment.
+          git add ./clusters/lab/podinfo-source.yaml ./clusters/lab/podinfo-kustomization.yaml
+          git commit -m "Add podinfo source and kustomization"
+          git push origin main
+
+
+14. # Watch Flux reconcile
+         flux get all
+
+15. # workspace list
+         kubectl get all -n default
+
+16. # BIGGER DRIFT — delete the entire Deployment.
+          kubectl delete deployment podinfo
+          kubectl get deployment 
+          
+          kubectl get deployment
+
+17. # Drift correction demo
+
+          Confirm starting state - check current image tag.
+          kubectl get deployment podinfo -o jsonpath='{.spec.template.spec.containers[0].image}'
+          echo
+          (whatever upstream's master has)
+           
+          Drift it. Manually change the image tag.
+          kubectl set image deployment/podinfo podinfod=ghcr.io/stefanprodan/podinfo:6.0.0
+           
+          Confirm the drift took effect.
+          kubectl get deployment podinfo -o jsonpath='{.spec.template.spec.containers[0].image}'
+          echo
+          your manual change is live.
+           
+          Force Flux to reconcile NOW (instead of waiting 5 min interval).
+          flux reconcile kustomization podinfo --with-source
+           
+          Verify Flux REVERTED the image tag back to Git's value.
+          kubectl get deployment podinfo -o jsonpath='{.spec.template.spec.containers[0].image}'
+          echo
+          back to 6.x.x - Flux reverted your drift. Git won.
+
+18. # Flux reconcile command
+          flux reconcile kustomization podinfo
+
+
 
 
