@@ -16,3 +16,6 @@
 
 4. # Kind cluster Install
        kind create cluster --name flux-lab --image kindest/node:v1.32.0
+       Get-ChildItem -Path "C:\Program Files" -Recurse -Filter gh.exe -ErrorAction SilentlyContinue
+       Get-ChildItem -Path "$env:LOCALAPPDATA\Programs" -Recurse -Filter gh.exe -ErrorAction SilentlyContinue
+       $env:Path += ";C:\Program Files\GitHub CLI"
