@@ -4,7 +4,7 @@
 
 2. # Install the software:
      # All four tools via Chocolatey
-      choco install -y kubernetes-cli kind flux gh git
+        choco install -y kubernetes-cli kind flux gh git
 
      # Verify all Tools
        docker --version
@@ -14,5 +14,5 @@
        gh --version
        git --version
 
-3. # Kind cluster Install
+4. # Kind cluster Install
        kind create cluster --name flux-lab --image kindest/node:v1.32.0
