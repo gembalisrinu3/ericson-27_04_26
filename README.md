@@ -25,10 +25,22 @@
         flux check --pre
 
 7. # Github Cred
-        gh auth login             
+        gh auth login
+
+          PS C:\Users\labuser> gh auth login
+          ? Where do you use GitHub? GitHub.com
+          ? What is your preferred protocol for Git operations on this host? HTTPS
+          ? Authenticate Git with your GitHub credentials? Yes
+          ? How would you like to authenticate GitHub CLI? Login with a web browser
+          
+          ! First copy your one-time code: B694-25AB
+          Press Enter to open https://github.com/login/device in your browser...
+          ✓ Authentication complete.
+          - gh config set -h github.com git_protocol https
+          ✓ Configured git protocol
         export GITHUB_USER=$(gh api user -q .login)
 
-8. # Bootstrap Flux
+9. # Bootstrap Flux
         flux bootstrap github \
        --owner=$GITHUB_USER \
        --repository=ericson-infra \
