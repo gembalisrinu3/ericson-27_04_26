@@ -133,6 +133,27 @@
 18. # Flux reconcile command
           flux reconcile kustomization podinfo
 
+    ============
+
+    # DAY 2
+
+1. Recreat the Kind cluster
+        
+     Delete the cluster from docker desktop
+     then run the below command
+     kind create cluster --name flux-lab --image kindest/node:v1.32.0
+
+     kubectl get nodes
+
+     flux bootstrap github \
+       --owner=$GITHUB_USER \
+       --repository=ericson-infra-d2 \
+       --branch=main \
+       --path=clusters/lab \
+       --personal \
+       --private \
+       --token-auth
+     
 
 
 
