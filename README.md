@@ -56,7 +56,10 @@
        Get-ChildItem -Path "$env:LOCALAPPDATA\Programs" -Recurse -Filter gh.exe -ErrorAction SilentlyContinue
        $env:Path += ";C:\Program Files\GitHub CLI"
 
-10. # Inspect what bootstrap actually created on disk
+          echo 'export PATH="/c/Program Files/GitHub CLI:$PATH"' >> ~/.bashrc
+          source ~/.bashrc
+
+11. # Inspect what bootstrap actually created on disk
           cd $HOME 
           gh repo clone 7ganeshs/ericson-infra 
           cd ericson-infra 
@@ -65,7 +68,7 @@
           # On disk (where you ran the command):
           ls ericson-infra/clusters/lab/flux-system/
 
-11. # deploy GitOps workload — podinfo. Create a GitRepository pointing at the upstream podinfo repo
+12. # deploy GitOps workload — podinfo. Create a GitRepository pointing at the upstream podinfo repo
 
           cd ericson-infra
           flux create source git podinfo \
@@ -76,7 +79,7 @@
            
           cat ./clusters/lab/podinfo-source.yaml
 
-12. # Create a Kustomization pointing at podinfo's deploy/kustomize directory
+13. # Create a Kustomization pointing at podinfo's deploy/kustomize directory
 
          flux create kustomization podinfo \
             --target-namespace=default \
@@ -89,25 +92,25 @@
            
           cat ./clusters/lab/podinfo-kustomization.yaml
 
-13. # Commit and push. The git push IS the deployment.
+14. # Commit and push. The git push IS the deployment.
           git add ./clusters/lab/podinfo-source.yaml ./clusters/lab/podinfo-kustomization.yaml
           git commit -m "Add podinfo source and kustomization"
           git push origin main
 
 
-14. # Watch Flux reconcile
+15. # Watch Flux reconcile
          flux get all
 
-15. # workspace list
+16. # workspace list
          kubectl get all -n default
 
-16. # BIGGER DRIFT — delete the entire Deployment.
+17. # BIGGER DRIFT — delete the entire Deployment.
           kubectl delete deployment podinfo
           kubectl get deployment 
           
           kubectl get deployment
 
-17. # Drift correction demo
+18. # Drift correction demo
 
           Confirm starting state - check current image tag.
           kubectl get deployment podinfo -o jsonpath='{.spec.template.spec.containers[0].image}'
@@ -130,7 +133,7 @@
           echo
           back to 6.x.x - Flux reverted your drift. Git won.
 
-18. # Flux reconcile command
+19. # Flux reconcile command
           flux reconcile kustomization podinfo
 
     ============
