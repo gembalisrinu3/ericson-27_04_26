@@ -379,6 +379,37 @@
                   66  kubectl -n dev port-forward svc/podinfo 9001:9898
                   67  kubectl -n staging port-forward svc/podinfo 9002:9898
                   68  history
+                            4  curl -s http://localhost:9001/api/info | grep -i color
+                            5  curl -s http://localhost:9002/api/info | grep -i color
+
+                  70  kubectl scale deployment podinfo -n dev --replicas=5
+                  71  kubectl get deployments -n dev
+                  72  kubectl get deployments -n dev
+                  73  kubectl get deployments -n dev
+                  74  kubectl get deployments -n dev
+                  75  kubectl get deployments -n dev
+                  76  kubectl get deployments -n dev
+                  77  kubectl get deployments -n dev
+                  78  flux reconcile kustomization apps-dev
+                  79  kubectl get deployments -n dev
+                  80  vi apps/overlays/staging/kustomization.yaml
+                  81  cat apps/base/podinfo/deployment.yaml | grep -i image
+                  82  vi apps/overlays/staging/kustomization.yaml
+                  83  git add apps/overlays/staging/kustomization.yaml
+                  84  git commit -m "demo: dummy image published to staging"
+                  85  git push
+                  86  flux reconcile kustomization apps-staging
+                  87  vi apps/overlays/staging/kustomization.yaml
+                  88  git add apps/overlays/staging/kustomization.yaml
+                  89  git commit -m "demo: restore image published to staging"
+                  90  git push
+                  91  flux get all
+                  92  flux reconcile kustomization apps-staging
+
+                  65  kubectl get all -n staging
+                  66  kubectl -n dev port-forward svc/podinfo 9001:9898
+                  67  kubectl -n staging port-forward svc/podinfo 9002:9898
+                  68  history
 
 
 
