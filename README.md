@@ -148,6 +148,7 @@
 
      kubectl get nodes
 
+     export GITHUB_USER=$(gh api user -q .login)
      flux bootstrap github \
        --owner=$GITHUB_USER \
        --repository=ericson-infra-d2 \
