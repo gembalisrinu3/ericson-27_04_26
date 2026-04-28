@@ -149,6 +149,7 @@
           kubectl get nodes
      
           export GITHUB_USER=$(gh api user -q .login)
+
           flux bootstrap github \
             --owner=$GITHUB_USER \
             --repository=ericson-infra-d2 \
@@ -157,7 +158,17 @@
             --personal \
             --private \
             --token-auth
-     
+
+           11  flux get kustomizations
+   12  gh repo clone $GITHUB_USER/ericson-infra-d2
+   13  cd ericson-infra
+   14  cd ../ericson-infra-d2/
+   15  ls -lart
+   16  ls -lart clusters/
+   17  ls -lart clusters/lab/
+   18  ls -lart clusters/lab/flux-system/
+   19  history
+
 
 
 
