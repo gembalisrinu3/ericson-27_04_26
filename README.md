@@ -159,15 +159,227 @@
             --private \
             --token-auth
 
-           11  flux get kustomizations
-   12  gh repo clone $GITHUB_USER/ericson-infra-d2
-   13  cd ericson-infra
-   14  cd ../ericson-infra-d2/
-   15  ls -lart
-   16  ls -lart clusters/
-   17  ls -lart clusters/lab/
-   18  ls -lart clusters/lab/flux-system/
-   19  history
+             11  flux get kustomizations
+             12  gh repo clone $GITHUB_USER/ericson-infra-d2
+             13  cd ericson-infra
+             14  cd ../ericson-infra-d2/
+             15  ls -lart
+             16  ls -lart clusters/
+             17  ls -lart clusters/lab/
+             18  ls -lart clusters/lab/flux-system/
+             19  history
+
+   
+               
+                  20  mkdir -p apps/base/podinfo
+                  21  cat > apps/base/podinfo/deployment.yaml <<'EOF'
+               ---
+               apiVersion: apps/v1
+               kind: Deployment
+               metadata:
+                 name: podinfo
+                 labels:
+                   app: podinfo
+               spec:
+                 replicas: 1
+                 selector:
+                   matchLabels:
+                     app: podinfo
+                 template:
+                   metadata:
+                     labels:
+                       app: podinfo
+                   spec:
+                     containers:
+                       - name: podinfo
+                         image: ghcr.io/stefanprodan/podinfo:6.7.1
+                         ports:
+                           - name: http
+                             containerPort: 9898
+                         env:
+                           - name: PODINFO_UI_COLOR
+                             value: "#34577c"
+                         livenessProbe:
+                           httpGet:
+                             path: /healthz
+                             port: 9898
+                           initialDelaySeconds: 5
+                           periodSeconds: 10
+                         readinessProbe:
+                           httpGet:
+                             path: /readyz
+                             port: 9898
+                           initialDelaySeconds: 5
+                           periodSeconds: 10
+                         resources:
+                           requests:
+                             cpu: 100m
+                             memory: 64Mi
+                           limits:
+                             cpu: 500m
+                             memory: 256Mi
+               EOF
+               
+                  22  cat > apps/base/podinfo/service.yaml <<'EOF'
+               ---
+               apiVersion: v1
+               kind: Service
+               metadata:
+                 name: podinfo
+                 labels:
+                   app: podinfo
+               spec:
+                 type: ClusterIP
+                 selector:
+                   app: podinfo
+                 ports:
+                   - name: http
+                     port: 9898
+                     targetPort: http
+               EOF
+               
+                  23  ls apps/base/podinfo/
+                  24  cat > apps/base/podinfo/kustomization.yaml <<'EOF'
+               ---
+               apiVersion: kustomize.config.k8s.io/v1beta1
+               kind: Kustomization
+               resources:
+                 - deployment.yaml
+                 - service.yaml
+               EOF
+               
+                  25
+                  26  ls apps/base/podinfo/
+                  27  ll apps/base/podinfo/
+                  28  mkdir -p apps/overlays/dev
+                  29  ll /apps
+                  30  ll apps
+                  31  ll apps/overlays/
+                  32  mkdir -p apps/overlays/staging
+                  33  ll apps/overlays/
+                  34  cat > apps/overlays/dev/namespace.yaml <<'EOF'
+               ---
+               apiVersion: v1
+               kind: Namespace
+               metadata:
+                 name: dev
+                 labels:
+                   environment: dev
+               EOF
+               
+                  35  cat > apps/overlays/dev/kustomization.yaml <<'EOF'
+               ---
+               apiVersion: kustomize.config.k8s.io/v1beta1
+               kind: Kustomization
+               namespace: dev
+               commonLabels:
+                 environment: dev
+               resources:
+                 - namespace.yaml
+                 - ../../base/podinfo
+               EOF
+               
+                  36
+                  37  ls apps/overlays/dev
+                  38  ll apps/overlays/dev
+                  39  ll apps/overlays/dev apps/overlays/staging/
+                  40  ll apps/base/podinfo/ apps/overlays/dev apps/overlays/staging/
+                  41  cat > apps/overlays/staging/namespace.yaml <<'EOF'
+               ---
+               apiVersion: v1
+               kind: Namespace
+               metadata:
+                 name: staging
+                 labels:
+                   environment: staging
+               EOF
+               
+                  42  cat > apps/overlays/staging/kustomization.yaml <<'EOF'
+               ---
+               apiVersion: kustomize.config.k8s.io/v1beta1
+               kind: Kustomization
+               namespace: staging
+               commonLabels:
+                 environment: staging
+               resources:
+                 - namespace.yaml
+                 - ../../base/podinfo
+               patches:
+                 - target:
+                     kind: Deployment
+                     name: podinfo
+                   patch: |
+                     - op: replace
+                       path: /spec/replicas
+                       value: 2
+                     - op: replace
+                       path: /spec/template/spec/containers/0/env/0/value
+                       value: "#f5a623"
+               EOF
+               
+                  43  ls -l clusters/lab/flux-system/ apps/base/ apps/base/podinfo/ apps/overlays/dev/ apps/overlays/staging/
+                  44  ls -l clusters/lab/flux-system/ apps/base/ apps/base/podinfo/ apps/overlays/dev/ apps/overlays/staging/ clusters/lab/
+                  45  cat clusters/lab/flux-system/kustomization.yaml
+                  46  cat > clusters/lab/apps-dev.yaml <<'EOF'
+               ---
+               apiVersion: kustomize.toolkit.fluxcd.io/v1
+               kind: Kustomization
+               metadata:
+                 name: apps-dev
+                 namespace: flux-system
+               spec:
+                 interval: 5m
+                 retryInterval: 1m
+                 timeout: 3m
+                 sourceRef:
+                   kind: GitRepository
+                   name: flux-system
+                 path: ./apps/overlays/dev
+                 prune: true
+                 wait: true
+               EOF
+               
+                  47  cat > clusters/lab/apps-staging.yaml <<'EOF'
+               ---
+               apiVersion: kustomize.toolkit.fluxcd.io/v1
+               kind: Kustomization
+               metadata:
+                 name: apps-staging
+                 namespace: flux-system
+               spec:
+                 interval: 5m
+                 retryInterval: 1m
+                 timeout: 3m
+                 sourceRef:
+                   kind: GitRepository
+                   name: flux-system
+                 path: ./apps/overlays/staging
+                 prune: true
+                 wait: true
+               EOF
+               
+                  48  ls clusters/lab/
+                  49  ll clusters/lab/
+                  50  git add .
+                  51  git commit -m "add podinfo base, dev and staging overlays"
+                  52  git push
+                  53  flux get all
+                  54  kubectl get ns
+                  55  flux reconcile source git flux-system
+                  56  flux get all
+                  57  flux get all
+                  58  flux reconcile kustomization flux-system
+                  59  flux get all
+                  60  kubectl get ns
+                  61  kubectl get deployments -n dev
+                  62  kubectl get deployments -n stagine
+                  63  kubectl get deployments -n staging
+                  64  kubectl get all -n dev
+                  65  kubectl get all -n staging
+                  66  kubectl -n dev port-forward svc/podinfo 9001:9898
+                  67  kubectl -n staging port-forward svc/podinfo 9002:9898
+                  68  history
+
 
 
 
