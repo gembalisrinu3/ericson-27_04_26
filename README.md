@@ -144,19 +144,19 @@
         
      # Delete the cluster from docker desktop
      # then run the below command
-     kind create cluster --name flux-lab --image kindest/node:v1.32.0
-
-     kubectl get nodes
-
-     export GITHUB_USER=$(gh api user -q .login)
-     flux bootstrap github \
-       --owner=$GITHUB_USER \
-       --repository=ericson-infra-d2 \
-       --branch=main \
-       --path=clusters/lab \
-       --personal \
-       --private \
-       --token-auth
+          kind create cluster --name flux-lab --image kindest/node:v1.32.0
+     
+          kubectl get nodes
+     
+          export GITHUB_USER=$(gh api user -q .login)
+          flux bootstrap github \
+            --owner=$GITHUB_USER \
+            --repository=ericson-infra-d2 \
+            --branch=main \
+            --path=clusters/lab \
+            --personal \
+            --private \
+            --token-auth
      
 
 
