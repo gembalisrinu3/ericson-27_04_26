@@ -142,8 +142,8 @@
 
 1. Recreat the Kind cluster
         
-     Delete the cluster from docker desktop
-     then run the below command
+     # Delete the cluster from docker desktop
+     # then run the below command
      kind create cluster --name flux-lab --image kindest/node:v1.32.0
 
      kubectl get nodes
