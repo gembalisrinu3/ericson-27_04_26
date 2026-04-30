@@ -413,6 +413,7 @@
 
 
    # secret creation using SOPS
+             cd ~/ericson-infra-d2
             4  age-keygen.exe -o demo.agekey
               5  cat demo.agekey
               6  cat demo.agekey  | grep -i public
@@ -470,59 +471,59 @@
                       - appsecret.enc.yaml
 
 
-   31  cd ../../..
-   32  cd clusters/lab/apps-dev.yaml
-   33  vi clusters/lab/apps-dev.yaml
+             31  cd ../../..
+             32  cd clusters/lab/apps-dev.yaml
+             33  vi clusters/lab/apps-dev.yaml
 
-          labuser@server2022 MINGW64 ~/ericson-infra-d2 (main)
-          $ cat clusters/lab/apps-dev.yaml
-          ---
-          apiVersion: kustomize.toolkit.fluxcd.io/v1
-          kind: Kustomization
-          metadata:
-            name: apps-dev
-            namespace: flux-system
-          spec:
-            interval: 5m
-            retryInterval: 1m
-            timeout: 3m
-            sourceRef:
-              kind: GitRepository
-              name: flux-system
-            path: ./apps/overlays/dev
-            prune: true
-            wait: true
-            decryption:
-              provider: sops
-              secretRef:
-                name: sops-age
+                    labuser@server2022 MINGW64 ~/ericson-infra-d2 (main)
+                    $ cat clusters/lab/apps-dev.yaml
+                    ---
+                    apiVersion: kustomize.toolkit.fluxcd.io/v1
+                    kind: Kustomization
+                    metadata:
+                      name: apps-dev
+                      namespace: flux-system
+                    spec:
+                      interval: 5m
+                      retryInterval: 1m
+                      timeout: 3m
+                      sourceRef:
+                        kind: GitRepository
+                        name: flux-system
+                      path: ./apps/overlays/dev
+                      prune: true
+                      wait: true
+                      decryption:
+                        provider: sops
+                        secretRef:
+                          name: sops-age
 
    
-   34  cat apps/base/podinfo/kustomization.yaml
-   35  ls apps/base/podinfo/appsecret.enc.yaml
-   36  ls apps/base/podinfo
-   37  cat apps/base/podinfo/appsecret.yaml
-   38  rm -f apps/base/podinfo/appsecret.yaml
-   39  ls apps/base/podinfo
-   40  cat apps/base/podinfo/secret-plain.yaml
-   41  rm apps/base/podinfo/secret-plain.yaml
-   42  rm apps/base/podinfo/secret.enc.yaml
-   43  ls apps/base/podinfo
-   44  cat apps/base/podinfo/kustomization.yaml
-   45  git add .
-   46  git commit -m "sops intergration"
-   47  git push
-   48  flux reconcile source git flux-system
-   49  flux reconcile kustomization flux-system
-   50  flux reconcile kustomization apps-dev
-   51  flux get all
-   52  kubectl get all -n dev
-   53  kubectl get secret -n dev
-   54  kubectl get secret podinfo-appsecret -n dev
-   55  kubectl get secret podinfo-appsecret -n dev -o jsonpath='{.data.api-token}'
-   56  kubectl get secret podinfo-appsecret -n dev -o jsonpath='{.data.api-token}' | base64 -d
-   57  sops --decrypt apps/base/podinfo/appsecret.enc.yaml
-   58  history
+             34  cat apps/base/podinfo/kustomization.yaml
+             35  ls apps/base/podinfo/appsecret.enc.yaml
+             36  ls apps/base/podinfo
+             37  cat apps/base/podinfo/appsecret.yaml
+             38  rm -f apps/base/podinfo/appsecret.yaml
+             39  ls apps/base/podinfo
+             40  cat apps/base/podinfo/secret-plain.yaml
+             41  rm apps/base/podinfo/secret-plain.yaml
+             42  rm apps/base/podinfo/secret.enc.yaml
+             43  ls apps/base/podinfo
+             44  cat apps/base/podinfo/kustomization.yaml
+             45  git add .
+             46  git commit -m "sops intergration"
+             47  git push
+             48  flux reconcile source git flux-system
+             49  flux reconcile kustomization flux-system
+             50  flux reconcile kustomization apps-dev
+             51  flux get all
+             52  kubectl get all -n dev
+             53  kubectl get secret -n dev
+             54  kubectl get secret podinfo-appsecret -n dev
+             55  kubectl get secret podinfo-appsecret -n dev -o jsonpath='{.data.api-token}'
+             56  kubectl get secret podinfo-appsecret -n dev -o jsonpath='{.data.api-token}' | base64 -d
+             57  sops --decrypt apps/base/podinfo/appsecret.enc.yaml
+             58  history
 
 
 
