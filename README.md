@@ -899,6 +899,11 @@
                  179  flux reconcile kustomization apps-dev
                  180  kubectl port-forward svc/podinfo 9898:9898 -n dev
 
+        # validation of BG
+                  curl -s http://localhost:9898/api/info
+                  13  for i in 1 2 3 4 5; do   echo -n "Request $i: ";   curl -s http://localhost:9898/api/info | jq -r '"\(.hostname)  -  \(.message)"'; done
+                  14
+
 
 
 
