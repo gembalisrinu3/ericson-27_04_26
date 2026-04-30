@@ -865,6 +865,16 @@
                  145  cat apps/base/podinfo/service.yaml
                  146  vi apps/base/podinfo/kustomization.yaml
                  147  cat apps/base/podinfo/kustomization.yaml
+                       cat apps/base/podinfo/kustomization.yaml
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+  - service.yaml
+  - appsecret.enc.yaml
+  - deployment-green.yaml
+    
                  148  rm apps/overlays/dev/image-automation/*
                  149  kubectl get pods -n dev
                  150  kubectl deploy deployment podinfo -n dev
