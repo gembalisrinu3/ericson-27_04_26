@@ -525,6 +525,208 @@
              57  sops --decrypt apps/base/podinfo/appsecret.enc.yaml
              58  history
 
+        # Image Update
+              69  flux bootstrap github   --owner=7ganeshs   --repository=ericson-infra-d2   --branch=main   --path=clusters/lab   --personal   --private   --token-auth   --components-extra=image-reflector-controller,image-automation-controller
+             70  kubectl get pods -n flux-system
+             71  mkdir -p apps/overlays/dev/image-automation
+             72  cd apps/overlays/dev/image-automation/
+             73  ls
+             74  cat > apps/overlays/dev/image-automation/image-repository.yaml <<'EOF'
+          ---
+          apiVersion: image.toolkit.fluxcd.io/v1beta2
+          kind: ImageRepository
+          metadata:
+            name: podinfo
+            namespace: flux-system
+          spec:
+            image: ghcr.io/stefanprodan/podinfo
+            interval: 5m
+          EOF
+          
+             75  cd -
+             76  cat > apps/overlays/dev/image-automation/image-repository.yaml <<'EOF'
+          ---
+          apiVersion: image.toolkit.fluxcd.io/v1beta2
+          kind: ImageRepository
+          metadata:
+            name: podinfo
+            namespace: flux-system
+          spec:
+            image: ghcr.io/stefanprodan/podinfo
+            interval: 5m
+          EOF
+          
+             77  cat > apps/overlays/dev/image-automation/image-policy.yaml <<'EOF'
+          ---
+          apiVersion: image.toolkit.fluxcd.io/v1beta2
+          kind: ImagePolicy
+          metadata:
+            name: podinfo
+            namespace: flux-system
+          spec:
+            imageRepositoryRef:
+              name: podinfo
+            policy:
+              semver:
+                range: '>=6.7.0 <7.0.0'
+          EOF
+          
+             78  cat > apps/overlays/dev/image-automation/image-update.yaml <<'EOF'
+          ---
+          apiVersion: image.toolkit.fluxcd.io/v1beta2
+          kind: ImageUpdateAutomation
+          metadata:
+            name: podinfo
+            namespace: flux-system
+          spec:
+            interval: 1m
+            sourceRef:
+              kind: GitRepository
+              name: flux-system
+            git:
+              checkout:
+                ref:
+                  branch: main
+              commit:
+                author:
+                  name: fluxcdbot
+                  email: fluxcdbot@users.noreply.github.com
+                messageTemplate: |
+                  chore(podinfo): automated image update
+          
+                  Files changed:
+                  {{ range $filename, $_ := .Changed.FileChanges -}}
+                  - {{ $filename }}
+                  {{ end -}}
+              push:
+                branch: main
+            update:
+              path: ./apps/base/podinfo
+              strategy: Setters
+          EOF
+          
+             79  cat > apps/overlays/dev/image-automation/kustomization.yaml <<'EOF'
+          ---
+          apiVersion: kustomize.config.k8s.io/v1beta1
+          kind: Kustomization
+          resources:
+            - image-repository.yaml
+            - image-policy.yaml
+            - image-update.yaml
+          EOF
+          
+             80  ls apps/overlays/dev/image-automation/
+             81  cd clusters/lab/
+             82  ls
+             83  cd -
+             84  cat > clusters/lab/image-automation.yaml <<'EOF'
+          ---
+          apiVersion: kustomize.toolkit.fluxcd.io/v1
+          kind: Kustomization
+          metadata:
+            name: image-automation
+            namespace: flux-system
+          spec:
+            interval: 5m
+            retryInterval: 1m
+            timeout: 3m
+            sourceRef:
+              kind: GitRepository
+              name: flux-system
+            path: ./apps/overlays/dev/image-automation
+            prune: true
+            wait: true
+          EOF
+          
+             85  cd apps/base/podinfo
+             86  cat deployment.yaml | grep -i image
+             87  cd -
+             88  cat > apps/base/podinfo/deployment.yaml <<'DEPEOF'
+          ---
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: podinfo
+            labels:
+              app: podinfo
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: podinfo
+            template:
+              metadata:
+                labels:
+                  app: podinfo
+              spec:
+                containers:
+                  - name: podinfo
+                    image: ghcr.io/stefanprodan/podinfo:6.7.1   # {"$imagepolicy": "flux-system:podinfo"}
+                    ports:
+                      - name: http
+                        containerPort: 9898
+                    env:
+                      - name: PODINFO_UI_COLOR
+                        value: "#34577c"
+                    livenessProbe:
+                      httpGet:
+                        path: /healthz
+                        port: 9898
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                    readinessProbe:
+                      httpGet:
+                        path: /readyz
+                        port: 9898
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                    resources:
+                      requests:
+                        cpu: 100m
+                        memory: 64Mi
+                      limits:
+                        cpu: 500m
+                        memory: 256Mi
+          DEPEOF
+          
+             89  tail -3 apps/base/podinfo/deployment.yaml
+             90  tail -10 apps/base/podinfo/deployment.yaml
+             91  cat apps/base/podinfo/deployment.yaml | grep -i image
+             92  git add .
+             93  git commit -m "image automation"
+             94  git push
+             95  git pull
+             96  git push
+             97  history | grep -i flux
+             98   flux reconcile source git flux-system
+             99   flux reconcile kustomization flux-system
+            100   flux reconcile kustomization apps-dev
+            101   flux reconcile kustomization apps-staging
+            102   flux reconcile kustomization image-automation
+            103  flux get all
+            104  flux get all
+            105  flux get image all -A
+            106  kubectl get pods -n dev
+            107  kubectl get deployment -n dev
+            108  kubectl get deployment podinfo -n dev
+            109  kubectl get deployment podinfo -n dev -o jsonpath='{.spec.template.spec.containers[0].image}'
+            110  kubectl get deployment -n staging
+            111  kubectl get pods -n staging
+            112  kubectl get deployment podinfo -n staging -o jsonpath='{.spec.template.spec.containers[0].image}'
+            113  cat apps/base/podinfo/deployment.yaml | grep -i image
+            114  cd apps/overlays/staging/
+            115  ls
+            116  cat kustomization.yaml
+            117  flux get all
+            118  flux suspend image update podinfo
+            119  flux get all
+            120  flux suspend image policy podinfo
+            121  flux get all
+            122  flux resume image update podinfo
+            123  flux get all
+            124  flux suspend image policy podinfo
+
+
 
 
 
