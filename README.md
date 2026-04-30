@@ -906,6 +906,179 @@
 
 
 
+   # Canary + Flagger
+
+              3  kubectl get deployments -n dev
+              4  rm -f apps/base/podinfo/deployment-green.yaml
+              5
+              6  cd ericson-infra-d2/
+              7  cd apps/base/podinfo
+              8  ls
+              9  rm deployment-green.yaml
+             10  cd -
+             11  cat > apps/base/podinfo/deployment.yaml <<'EOF'
+          ---
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: podinfo
+            labels:
+              app: podinfo
+          spec:
+            replicas: 2
+            selector:
+              matchLabels:
+                app: podinfo
+            template:
+              metadata:
+                labels:
+                  app: podinfo
+              spec:
+                containers:
+                  - name: podinfo
+                    image: ghcr.io/stefanprodan/podinfo:6.7.0
+                    ports:
+                      - name: http
+                        containerPort: 9898
+                    env:
+                      - name: PODINFO_UI_COLOR
+                        value: "#0066ff"
+                    livenessProbe:
+                      httpGet:
+                        path: /healthz
+                        port: 9898
+                    readinessProbe:
+                      httpGet:
+                        path: /readyz
+                        port: 9898
+                    resources:
+                      requests:
+                        cpu: 100m
+                        memory: 64Mi
+          EOF
+          
+             12  cat > apps/base/podinfo/service.yaml <<'EOF'
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: podinfo
+            labels:
+              app: podinfo
+          spec:
+            type: ClusterIP
+            selector:
+              app: podinfo
+            ports:
+              - name: http
+                port: 9898
+                targetPort: http
+          EOF
+          
+             13  cd -
+             14  ls
+             15  vi kustomization.yaml
+             16  kubectl delete deployment podinfo-blue -n dev --ignore-not-found
+             17  kubectl delete deployment podinfo-green -n dev --ignore-not-found
+             18
+             19  git add .
+             20  git commit -m " delete the deployment"
+             21  git push
+             22  flux reconcile source git flux-system
+             23  cd -
+             24  flux reconcile source git flux-system
+             25  flux reconcile kustomization apps-dev
+             26  kubectl get all -n dev
+             27  mkdir apps/base/flagger
+             28  cd infrastructure/sources/
+             29  ls
+             30  cat podinfo-helm.yaml
+             31  cd -
+             32  cat > infrastructure/sources/flagger.yaml <<'EOF'
+          ---
+          apiVersion: source.toolkit.fluxcd.io/v1
+          kind: HelmRepository
+          metadata:
+            name: flagger
+            namespace: flux-system
+          spec:
+            interval: 1h
+            url: https://flagger.app
+          EOF
+          
+             33  cd -
+             34  cat flagger.yaml
+             35  cat podinfo-helm.yaml
+             36  cd -
+             37  cd apps/base/flagger/
+             38  ls
+             39  cd -
+             40  cat > apps/base/flagger/helmrelease.yaml <<'EOF'
+          ---
+          apiVersion: helm.toolkit.fluxcd.io/v2
+          kind: HelmRelease
+          metadata:
+            name: flagger
+            namespace: flux-system
+          spec:
+            interval: 5m
+            releaseName: flagger
+            targetNamespace: flagger-system
+            install:
+              createNamespace: true
+              remediation:
+                retries: 3
+            upgrade:
+              remediation:
+                retries: 3
+                strategy: rollback
+            chart:
+              spec:
+                chart: flagger
+                version: "1.x"
+                sourceRef:
+                  kind: HelmRepository
+                  name: flagger
+                  namespace: flux-system
+            values:
+              meshProvider: kubernetes      # use kubernetes provider (no service mesh needed)
+              metricsServer: http://prometheus-server.monitoring.svc.cluster.local:80
+              prometheus:
+                install: true               # install bundled Prometheus
+          EOF
+          
+             41  cat > apps/base/flagger/kustomization.yaml <<'EOF'
+          ---
+          apiVersion: kustomize.config.k8s.io/v1beta1
+          kind: Kustomization
+          resources:
+            - helmrelease.yaml
+          EOF
+          
+             42  cd infrastructure/sources/
+             43  ls
+             44  cat kustomization.yaml
+             45  vi kustomization.yaml
+             46  cd -
+             47  cd apps/overlays/dev/
+             48  ls
+             49  cat kustomization.yaml
+             50  vi kustomization.yaml
+             51  cat kustomization.yaml
+             52  history
+             53  git add .
+             54  cd -
+             55  git add .
+             56  git commit -m "canary+flagger"
+             57  git push
+             58  flux reconcile source git flux-system
+             59  flux reconcile kustomization flux-system
+             60  flux reconcile kustomization infrastructure
+             61  flux reconcile kustomization apps-dev
+             62  kubectl get ns
+             63  kubectl get deployments -n flagger-system
+             64  kubectl get all -n flagger-system
+             65  flux get hr -A
 
 
 
