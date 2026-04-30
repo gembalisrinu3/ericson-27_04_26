@@ -885,6 +885,24 @@
                  165  kubectl get svc -n dev
                  166  kubectl port-forward svc/podinfo 9898:9898 -n dev
                  167  vi apps/base/podinfo/service.yaml
+cat apps/base/podinfo/service.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: podinfo
+  labels:
+    app: podinfo
+spec:
+  type: ClusterIP
+  selector:
+    app: podinfo
+    color: green
+  ports:
+    - name: http
+      port: 9898
+      targetPort: http
+
                  168  git add apps/base/podinfo/service.yaml
                  169  git commit -m "service update"
                  170  git push
