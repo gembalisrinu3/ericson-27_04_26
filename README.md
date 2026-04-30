@@ -414,60 +414,60 @@
 
    # secret creation using SOPS
             4  age-keygen.exe -o demo.agekey
-    5  cat demo.agekey
-    6  cat demo.agekey  | grep -i public
-    7  grep "public key" demo.agekey | sed 's/# public key: //'
-    8  PUBKEY=$(grep "public key" demo.agekey | sed 's/# public key: //')
-    9  echo $PUBKEY
-   10  cat > .sops.yaml <<EOF
----
-creation_rules:
-  - path_regex: appsecret(\.enc)?\.yaml$
-    encrypted_regex: '^(data|stringData)$'
-    age: $PUBKEY
-EOF
+              5  cat demo.agekey
+              6  cat demo.agekey  | grep -i public
+              7  grep "public key" demo.agekey | sed 's/# public key: //'
+              8  PUBKEY=$(grep "public key" demo.agekey | sed 's/# public key: //')
+              9  echo $PUBKEY
+             10  cat > .sops.yaml <<EOF
+                    ---
+                    creation_rules:
+                      - path_regex: appsecret(\.enc)?\.yaml$
+                        encrypted_regex: '^(data|stringData)$'
+                        age: $PUBKEY
+                    EOF
 
-   11  cat .sops.yaml
-   12  cat > apps/base/podinfo/appsecret.yaml <<'EOF'
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: podinfo-appsecret
-type: Opaque
-stringData:
-  api-token: "demo-token-1234567890"
-  db-password: "demo-password-secure"
-  smtp-host: "smtp.demo.example.com"
-EOF
+             11  cat .sops.yaml
+             12  cat > apps/base/podinfo/appsecret.yaml <<'EOF'
+                    ---
+                    apiVersion: v1
+                    kind: Secret
+                    metadata:
+                      name: podinfo-appsecret
+                    type: Opaque
+                    stringData:
+                      api-token: "demo-token-1234567890"
+                      db-password: "demo-password-secure"
+                      smtp-host: "smtp.demo.example.com"
+                    EOF
 
-   13  sops --encrypt apps/base/podinfo/appsecret.yaml > apps/base/podinfo/appsecret.enc.yaml
-   14  cat apps/base/podinfo/appsecret.enc.yaml
-   15  export SOPS_AGE_KEY=$(cat demo.agekey | grep "AGE-SECTET-KEY")
-   16  echo "key loaded: $(SOPS_AGE_KEY:0:30)..."
-   17  cat demo.agekey | grep "AGE-SECTET-KEY"
-   18  cat demo.agekey
-   19  export SOPS_AGE_KEY=$(cat demo.agekey | grep "AGE-SECRET-KEY")
-   20  echo "key loaded: $(SOPS_AGE_KEY:0:30)..."
-   21  export SOPS_AGE_KEY=$(cat demo.agekey | grep "AGE-SECRET-KEY")
-   22  $SOPS_AGE_KEY
-   23  sops --decrypt apps/base/podinfo/appsecret.enc.yaml
-   24  cat apps/base/podinfo/appsecret.enc.yaml
-   25  kubectl create secret generic sops-age --namespace=flux-system --from-file=age.agekey=demo.agekey
-   26  kubectl get secret sops-age -n flux-system
-   27  cd apps/base/podinfo
-   28  ls
-   29  cat appsecret.enc.yaml
-   30  vi kustomization.yaml
-                  labuser@server2022 MINGW64 ~/ericson-infra-d2/apps/base/podinfo (main)
-          $ cat kustomization.yaml
-          ---
-          apiVersion: kustomize.config.k8s.io/v1beta1
-          kind: Kustomization
-          resources:
-            - deployment.yaml
-            - service.yaml
-            - appsecret.enc.yaml
+             13  sops --encrypt apps/base/podinfo/appsecret.yaml > apps/base/podinfo/appsecret.enc.yaml
+             14  cat apps/base/podinfo/appsecret.enc.yaml
+             15  export SOPS_AGE_KEY=$(cat demo.agekey | grep "AGE-SECTET-KEY")
+             16  echo "key loaded: $(SOPS_AGE_KEY:0:30)..."
+             17  cat demo.agekey | grep "AGE-SECTET-KEY"
+             18  cat demo.agekey
+             19  export SOPS_AGE_KEY=$(cat demo.agekey | grep "AGE-SECRET-KEY")
+             20  echo "key loaded: $(SOPS_AGE_KEY:0:30)..."
+             21  export SOPS_AGE_KEY=$(cat demo.agekey | grep "AGE-SECRET-KEY")
+             22  $SOPS_AGE_KEY
+             23  sops --decrypt apps/base/podinfo/appsecret.enc.yaml
+             24  cat apps/base/podinfo/appsecret.enc.yaml
+             25  kubectl create secret generic sops-age --namespace=flux-system --from-file=age.agekey=demo.agekey
+             26  kubectl get secret sops-age -n flux-system
+             27  cd apps/base/podinfo
+             28  ls
+             29  cat appsecret.enc.yaml
+             30  vi kustomization.yaml
+                            labuser@server2022 MINGW64 ~/ericson-infra-d2/apps/base/podinfo (main)
+                    $ cat kustomization.yaml
+                    ---
+                    apiVersion: kustomize.config.k8s.io/v1beta1
+                    kind: Kustomization
+                    resources:
+                      - deployment.yaml
+                      - service.yaml
+                      - appsecret.enc.yaml
 
 
    31  cd ../../..
