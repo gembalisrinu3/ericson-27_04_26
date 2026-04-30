@@ -726,6 +726,180 @@
             123  flux get all
             124  flux suspend image policy podinfo
 
+   # Blue green deployment
+               118  flux suspend image update podinfo
+                 119  flux get all
+                 120  flux suspend image policy podinfo
+                 121  flux get all
+                 122  flux resume image update podinfo
+                 123  flux get all
+                 124  flux suspend image policy podinfo
+                 125  history
+                 126  kubectl get pods
+                 127  kubectl get pods -n dev
+                 128  kubectl get pods -n staging
+                 129  cd -
+                 130  git pull
+                 131  kubectl get service podinfo -n dev -o jsonpath='{.spec.selector}' | python -m json.tool 2>/dev/null || kubectl get service podinfo -n dev -o yaml | grep -A2 selector
+                 132  cd apps/base/podinfo
+                 133  ls
+                 134  cat deployment.yaml
+                 135  cd -
+                 136  cat > apps/base/podinfo/deployment.yaml <<'EOF'
+               ---
+               apiVersion: apps/v1
+               kind: Deployment
+               metadata:
+                 name: podinfo-blue
+                 labels:
+                   app: podinfo
+                   color: blue
+               spec:
+                 replicas: 1
+                 selector:
+                   matchLabels:
+                     app: podinfo
+                     color: blue
+                 template:
+                   metadata:
+                     labels:
+                       app: podinfo
+                       color: blue
+                   spec:
+                     containers:
+                       - name: podinfo
+                         image: ghcr.io/stefanprodan/podinfo:6.7.0
+                         ports:
+                           - name: http
+                             containerPort: 9898
+                         env:
+                           - name: PODINFO_UI_COLOR
+                             value: "#0066ff"
+                           - name: PODINFO_UI_MESSAGE
+                             value: "BLUE deployment - v6.7.0 - the current production"
+                         livenessProbe:
+                           httpGet:
+                             path: /healthz
+                             port: 9898
+                           initialDelaySeconds: 5
+                           periodSeconds: 10
+                         readinessProbe:
+                           httpGet:
+                             path: /readyz
+                             port: 9898
+                           initialDelaySeconds: 5
+                           periodSeconds: 10
+               EOF
+               
+                 137  cat deployment.yaml
+                 138  cd apps/base/podinfo
+                 139  cat deployment.yaml
+                 140  cd -
+                 141  cat > apps/base/podinfo/deployment-green.yaml <<'EOF'
+               ---
+               apiVersion: apps/v1
+               kind: Deployment
+               metadata:
+                 name: podinfo-green
+                 labels:
+                   app: podinfo
+                   color: green
+               spec:
+                 replicas: 1
+                 selector:
+                   matchLabels:
+                     app: podinfo
+                     color: green
+                 template:
+                   metadata:
+                     labels:
+                       app: podinfo
+                       color: green
+                   spec:
+                     containers:
+                       - name: podinfo
+                         image: ghcr.io/stefanprodan/podinfo:6.7.1
+                         ports:
+                           - name: http
+                             containerPort: 9898
+                         env:
+                           - name: PODINFO_UI_COLOR
+                             value: "#00cc66"
+                           - name: PODINFO_UI_MESSAGE
+                             value: "GREEN deployment - v6.7.1 - the new candidate"
+                         livenessProbe:
+                           httpGet:
+                             path: /healthz
+                             port: 9898
+                           initialDelaySeconds: 5
+                           periodSeconds: 10
+                         readinessProbe:
+                           httpGet:
+                             path: /readyz
+                             port: 9898
+                           initialDelaySeconds: 5
+                           periodSeconds: 10
+               EOF
+               
+                 142  cat apps/base/podinfo/deployment-green.yaml | head -10
+                 143  cat apps/base/podinfo/deployment.yaml | head -10
+                 144  cat > apps/base/podinfo/service.yaml <<'EOF'
+               ---
+               apiVersion: v1
+               kind: Service
+               metadata:
+                 name: podinfo
+                 labels:
+                   app: podinfo
+               spec:
+                 type: ClusterIP
+                 selector:
+                   app: podinfo
+                   color: blue
+                 ports:
+                   - name: http
+                     port: 9898
+                     targetPort: http
+               EOF
+               
+                 145  cat apps/base/podinfo/service.yaml
+                 146  vi apps/base/podinfo/kustomization.yaml
+                 147  cat apps/base/podinfo/kustomization.yaml
+                 148  rm apps/overlays/dev/image-automation/*
+                 149  kubectl get pods -n dev
+                 150  kubectl deploy deployment podinfo -n dev
+                 151  kubectl delete deployment podinfo -n dev
+                 152  flux reconcile source git flux-system
+                 153  flux reconcile kustomization apps-dev
+                 154  kubectl get pods -n dev
+                 155  git add apps/base/podinfo/
+                 156  git commit -n " blue green"
+                 157  git commit -m " blue green"
+                 158  git push
+                 159  flux reconcile source git flux-system
+                 160  flux reconcile kustomization apps-dev
+                 161  flux get all
+                 162  kubectl get pods -n dev
+                 163  kubectl get endpoints -n dev
+                 164  kubectl get endpoints podinfo -n dev
+                 165  kubectl get svc -n dev
+                 166  kubectl port-forward svc/podinfo 9898:9898 -n dev
+                 167  vi apps/base/podinfo/service.yaml
+                 168  git add apps/base/podinfo/service.yaml
+                 169  git commit -m "service update"
+                 170  git push
+                 171  flux reconcile source git flux-system
+                 172  flux reconcile kustomization apps-dev
+                 173  kubectl port-forward svc/podinfo 9898:9898 -n dev
+                 174  vi apps/base/podinfo/service.yaml
+                 175  git add apps/base/podinfo/service.yaml
+                 176  git commit -m "service update"
+                 177  git push
+                 178  flux reconcile source git flux-system
+                 179  flux reconcile kustomization apps-dev
+                 180  kubectl port-forward svc/podinfo 9898:9898 -n dev
+
+
 
 
 
